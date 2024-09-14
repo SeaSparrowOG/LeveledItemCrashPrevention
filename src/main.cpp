@@ -1,6 +1,7 @@
 #include <spdlog/sinks/basic_file_sink.h>
 
 #include "hooks.h"
+#include "settings.h"
 
 void SetupLog() {
     auto logsFolder = SKSE::log::log_directory();
@@ -46,5 +47,8 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
         SKSE::stl::report_and_fail("Failed to validate hooks. Aborting load.");
         return false;
     }
+    _loggerInfo("-------------------------------------------------------------------------------------");
+
+    Settings::Holder::GetSingleton()->ReadSettings();
     return true;
 }

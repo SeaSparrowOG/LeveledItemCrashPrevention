@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 set(PROJECT_AUTHOR "SeaSparrow" CACHE STRING "")
 set(NAME "LeveledListCrashPrevention" CACHE STRING "")
-set(VERSION 1.0.0 CACHE STRING "")
+set(VERSION 1.0.1 CACHE STRING "")
 
 # ---- Options ----
 option(BUILD_TEST "Sets log level to debug." OFF)

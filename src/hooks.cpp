@@ -1,5 +1,7 @@
 #include "hooks.h"
 
+#include "settings.h"
+
 namespace Hooks {
     void DebugLeveledList(RE::TESLeveledList* a_list, RE::TESForm* a_problem) {
         auto* form = skyrim_cast<RE::TESBoundObject*>(a_list);
@@ -17,6 +19,9 @@ namespace Hooks {
             ++i;
         }
         _loggerInfo("___________________________________________________");
+        if (Settings::Holder::GetSingleton()->ShouldWarn()) {
+            RE::DebugMessageBox("Warning: Caught bad AddForm. Check <My Games/Skyrim Special Edition/SKSE/LeveledListCrashPrevention.log> for more information. This message is safe to ignore.");
+        }
     }
 
     //Leveled Items
@@ -34,11 +39,12 @@ namespace Hooks {
         auto& trampoline = SKSE::GetTrampoline();
 
         REL::Relocation<std::uintptr_t> target{ REL::ID(55965), 0x56 };
-        if (!REL::make_pattern<"E8 75 1C 7C FF">().match(target.address())) {
+        if (!(REL::make_pattern<"E8 75 1C 7C FF">().match(target.address()) ||
+            REL::make_pattern<"E8 D5 FF 7B FF">().match(target.address()))) {
             _loggerInfo("Failed to validate hook address for ProtectLevItems. Aborting load.");
             return false;
         }
-
+        _loggerInfo("Installed leveled item patch.");
         _originalCall = trampoline.write_call<5>(target.address(), &AddForm);
         return true;
     }
@@ -59,11 +65,13 @@ namespace Hooks {
         auto& trampoline = SKSE::GetTrampoline();
 
         REL::Relocation<std::uintptr_t> target{ REL::ID(55954), 0x56 };
-        if (!REL::make_pattern<"E8 F5 24 7C FF">().match(target.address())) {
+        if (!(REL::make_pattern<"E8 F5 24 7C FF">().match(target.address()) ||
+            REL::make_pattern<"E8 55 08 7C FF">().match(target.address()))) {
             _loggerInfo("Failed to validate hook address for ProtectLeveledActors. Aborting load.");
             return false;
         }
 
+        _loggerInfo("Installed leveled actor patch.");
         _originalCall = trampoline.write_call<5>(target.address(), &AddForm);
         return true;
     }
@@ -84,11 +92,13 @@ namespace Hooks {
         auto& trampoline = SKSE::GetTrampoline();
 
         REL::Relocation<std::uintptr_t> target{ REL::ID(55976), 0x56 };
-        if (!REL::make_pattern<"E8 65 13 7C FF">().match(target.address())) {
+        if (!(REL::make_pattern<"E8 65 13 7C FF">().match(target.address()) ||
+                REL::make_pattern<"E8 C5 F6 7B FF">().match(target.address()))) {
             _loggerInfo("Failed to validate hook address for ProtectLeveledSpells. Aborting load.");
             return false;
         }
 
+        _loggerInfo("Installed leveled spell patch.");
         _originalCall = trampoline.write_call<5>(target.address(), &AddForm);
         return true;
     }
