@@ -4,7 +4,8 @@ namespace Settings {
 	bool ShouldRebuildINI(CSimpleIniA* a_ini) {
 		const char* section = "General";
 		const char* keys[] = {
-			"bWarn" };
+			"bWarn",
+			"bSanitize" };
 		int sectionLength = sizeof(keys) / sizeof(keys[0]);
 		std::list<CSimpleIniA::Entry> keyHolder;
 
@@ -33,16 +34,23 @@ namespace Settings {
 
 		if (createEntries) {
 			ini.Delete("General", NULL);
-			ini.SetBoolValue("General", "bWarn", false, ";If set to true, prints a warning in game when a leveled list would be overfilled. Default: False.");
+			ini.SetBoolValue("General", "bWarn", false,     ";If set to true, prints a warning in game when a leveled list would be overfilled. Default: False.");
+			ini.SetBoolValue("General", "bSanitize", false, ";If set to true, checks leveled lists in all plugins to verify that they are under 255 entries. Default: False.");
 			ini.SaveFile(f.c_str());
 		}
 
 		this->warn = ini.GetBoolValue("General", "bWarn", false);
+		this->sanitize = ini.GetBoolValue("General", "bSanitize", false);
 		return true;
 	}
 
 	bool Holder::ShouldWarn()
 	{
 		return this->warn;
+	}
+
+	bool Holder::ShouldSanitize()
+	{
+		return this->sanitize;
 	}
 }

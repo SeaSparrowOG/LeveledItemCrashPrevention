@@ -1,6 +1,7 @@
 #include <spdlog/sinks/basic_file_sink.h>
 
 #include "hooks.h"
+#include "sanitizer.h"
 #include "settings.h"
 
 void SetupLog() {
@@ -23,6 +24,19 @@ void SetupLog() {
 
     //Pattern
     spdlog::set_pattern("%v");
+}
+
+void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
+    switch (a_message->type) {
+    case SKSE::MessagingInterface::kDataLoaded:
+        if (Settings::Holder::GetSingleton()->ShouldSanitize()) {
+            Sanitizer::Sanitize();
+            _loggerInfo("-------------------------------------------------------------------------------------");
+        }
+        break;
+    default:
+        break;
+    }
 }
 
 extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
@@ -50,5 +64,9 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
     _loggerInfo("-------------------------------------------------------------------------------------");
 
     Settings::Holder::GetSingleton()->ReadSettings();
+
+    auto messaging = SKSE::GetMessagingInterface();
+    messaging->RegisterListener(MessageHandler);
+
     return true;
 }

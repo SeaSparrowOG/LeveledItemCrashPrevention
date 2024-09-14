@@ -5,8 +5,10 @@ namespace Settings {
 	public:
 		bool ReadSettings();
 		bool ShouldWarn();
+		bool ShouldSanitize();
 
 	private:
 		bool warn;
+		bool sanitize;
 	};
 }
