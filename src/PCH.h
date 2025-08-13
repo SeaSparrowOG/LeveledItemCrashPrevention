@@ -20,12 +20,18 @@
 using namespace std::literals;
 using namespace clib_util::singleton;
 
-#ifdef SKYRIM_AE
+#ifdef SKYRIMVR
+#	define OFFSET(se, ae) se
+#	define OFFSET_3(se, ae, vr) vr
+#	define OFFSET3(se, ae, vr) vr
+#elif defined(SKYRIM_AE)
 #	define OFFSET(se, ae) ae
 #	define OFFSET_3(se, ae, vr) ae
+#	define OFFSET3(se, ae, vr) ae
 #else
 #	define OFFSET(se, ae) se
 #	define OFFSET_3(se, ae, vr) se
+#	define OFFSET3(se, ae, vr) se
 #endif
 
 #include "Version.h"

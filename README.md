@@ -1,6 +1,8 @@
 ## Leveled List Crash Prevention
 Simple SKSE bugfix that prevents AddForm from adding forms to leveled lists with >255 entries. This prevents crashes.
 
+Supports both [Skyrim Special Edition](https://www.nexusmods.com/skyrimspecialedition/mods/129152), [Anniversary Edition](https://www.nexusmods.com/skyrimspecialedition/mods/129136) and [Skyrim VR](https://www.nexusmods.com/skyrimspecialedition/mods/156773).
+
 ## Building
 ### Requirements:
 - CMake
@@ -11,10 +13,20 @@ Simple SKSE bugfix that prevents AddForm from adding forms to leveled lists with
 ```
 git clone https://github.com/SeaSparrowOG/LeveledListCrashPrevention
 cd LeveledListCrashPrevention
-git submodule innit
+git submodule init
 git submodule update --recursive
+
+# For Skyrim Special Edition (1.5.97):
 cmake --preset vs2022-windows-vcpkg 
-cmake --build Release --config Release
+cmake --build build --config Release
+
+# For Skyrim Annivesary Edition:
+cmake --preset vs2022-windows-vcpkg-ae
+cmake --build build-ae --config Release
+
+# For Skyrim VR:
+cmake --preset vs2022-windows-vcpkg-vr
+cmake --build build-vr --config Release
 ```
 ---
 ### Automatic deployment to MO2:

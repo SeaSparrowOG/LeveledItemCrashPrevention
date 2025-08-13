@@ -5,6 +5,8 @@ set(VERSION 1.1.0 CACHE STRING "")
 
 # ---- Options ----
 option(BUILD_TEST "Sets log level to debug." OFF)
+option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
+option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
 
 # ---- Cache build vars ----
 macro(set_from_environment VARIABLE)
@@ -15,28 +17,41 @@ endmacro()
 
 macro(find_commonlib_path)
 	if (CommonLibName AND NOT ${CommonLibName} STREQUAL "")
-		# Check path
-		set_from_environment(${CommonLibName}Path)
-		set(CommonLibPath ${${CommonLibName}Path})
-		if (${CommonLibPath} STREQUAL "CommonLibPath-NOTFOUND")
-			#Check extern
-			find_path(CommonLibPath
-			include/REL/Relocation.h
-			PATHS extern/${CommonLibName})
+		# First check local extern directory
+		find_path(CommonLibPath
+		include/REL/Relocation.h
+		PATHS Extern/${CommonLibName}
+		NO_DEFAULT_PATH)
+		
+		if (NOT CommonLibPath)
+			# Fall back to environment variable
+			set_from_environment(${CommonLibName}Path)
+			set(CommonLibPath ${${CommonLibName}Path})
 		endif()
 	endif()
 endmacro()
 
 set_from_environment(VCPKG_ROOT) 
-set(CommonLibName "CommonLibSSE")
+if(BUILD_SKYRIMVR)
+	set(CommonLibName "CommonLibVR")
+else()
+	set(CommonLibName "CommonLibSSE")
+endif()
 find_commonlib_path()
 set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "")
 set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "")
 
-add_compile_definitions(SKYRIM_AE)
-add_compile_definitions(SKYRIM_SUPPORT_AE)
+if(BUILD_SKYRIMVR)
+	add_compile_definitions(SKYRIMVR)
+elseif (BUILD_SKYRIMAE)
+	add_compile_definitions(SKYRIM_AE)
+	add_compile_definitions(SKYRIM_SUPPORT_AE)
+else()
+	add_compile_definitions(SKYRIM_SE)
+	add_compile_definitions(SKYRIM_SUPPORT_SE)
+endif()
 if (BUILD_TEST)
 	add_compile_definitions(DEBUG)
 endif()
@@ -86,11 +101,15 @@ set(Boost_USE_STATIC_LIBS ON)
 # ---- Dependencies ----
 
 if (DEFINED CommonLibPath AND NOT ${CommonLibPath} STREQUAL "" AND IS_DIRECTORY ${CommonLibPath})
+	# Pass VR build option to CommonLibVR  
+	if(BUILD_SKYRIMVR)
+		set(BUILD_SKYRIMVR ON CACHE BOOL "Build for Skyrim VR" FORCE)
+	endif()
 	add_subdirectory(${CommonLibPath} ${CommonLibName})
 else ()
 	message(
 		FATAL_ERROR
-		"Variable ${CommonLibName} is not set."
+		"Variable CommonLibName is not set."
 	)
 endif()
 

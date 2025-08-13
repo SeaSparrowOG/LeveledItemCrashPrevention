@@ -1,10 +1,13 @@
 {
   "name": "leveled-list-crash-prevention",
-  "version-string": "1.0.0",
+  "version-string": "1.1.0",
   "description": "SKSE Plugin that prevents leveled lists from having over 255 elements.",
   "homepage": "",
-  "license": "MIT",
+  "license": "APACHE-2.0",
   "dependencies": [
+    "catch2",
+    "directxtk",
+    "rapidcsv",
     "rsm-binary-io",
     "spdlog",
     "clib-util",
