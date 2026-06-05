@@ -1,20 +1,17 @@
 {
-  "name": "leveled-list-crash-prevention",
-  "version-string": "1.0.0",
-  "description": "SKSE Plugin that prevents leveled lists from having over 255 elements.",
-  "homepage": "",
+  "name": "leveled-list-crash-fix",
+  "version-string": "2.0.0",
+  "description": "SKSE Plugin for Skyrim Special Edition that fixes some Leveled List related crashes.",
+  "homepage": "https://github.com/SeaSparrowOG/LeveledListCrashFix",
   "license": "GPL-3.0",
   "dependencies": [
+    "boost-stl-interfaces",
+    "clib-util",
+    "fmt",
     "rsm-binary-io",
     "spdlog",
-    "clib-util",
+    "simpleini",
     "xbyak"
   ],
-  "overrides": [
-    {
-      "name": "fmt",
-      "version": "9.1.0"
-    }
-  ],
-  "builtin-baseline": "b7dba7f9aad09a56900f21cd78cfda1258e54e38"
+  "builtin-baseline": "eae1680538b86f962455c27abca2aad0dc304a4d"
 }
