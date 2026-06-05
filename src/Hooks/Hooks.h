@@ -2,6 +2,8 @@
 
 #include "Settings/INI/INISettings.h"
 
+#undef AddForm
+
 namespace Hooks {
     template <typename T>
     struct AddFormHook {
@@ -48,12 +50,13 @@ namespace Hooks {
             REL::Relocation<std::uintptr_t> target{ id, offset };
             if (!(REL::make_pattern<"E8">().match(target.address())))
             {
-                logger::critical("  Failed to match pattern at {}."sv, id);
+                logger::critical("  Failed to match pattern at {}."sv, id.id());
                 return false;
             }
 
             auto& trampoline = SKSE::GetTrampoline();
             _addForm = trampoline.write_call<5>(target.address(), &AddForm);
+            return true;
         }
     };
 
