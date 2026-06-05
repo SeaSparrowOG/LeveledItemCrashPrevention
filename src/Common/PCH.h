@@ -4,6 +4,8 @@
 #include "SKSE/SKSE.h"
 #include "REX/REX.h"
 
+#include <ClibUtil/utils.hpp>
+
 #include <unordered_set>
 #include <spdlog/sinks/basic_file_sink.h>
 

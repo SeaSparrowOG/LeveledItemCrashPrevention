@@ -1,43 +1,16 @@
 #include "hooks.h"
 
+#include "RE/Offset.h"
+
 namespace Hooks {
-    void ProtectLevItems::AddForm(RE::TESLeveledList* a_this, RE::TESBoundObject* a_list, unsigned short a_level, unsigned long long a_count, RE::TESForm* a_form) {
-        (void)a_this;
-        (void)a_list;
-        (void)a_level;
-        (void)a_count;
-        (void)a_form;
-    }
-
-    bool ProtectLevItems::Install() {
-        return true;
-    }
-
-    void ProtectLeveledActors::AddForm(RE::TESLeveledList* a_this, RE::TESBoundObject* a_list, unsigned short a_level, unsigned long long a_count, RE::TESForm* a_form) {
-        (void)a_this;
-        (void)a_list;
-        (void)a_level;
-        (void)a_count;
-        (void)a_form;
-    }
-
-    bool ProtectLeveledActors::Install() {
-        return true;
-    }
-
-    void ProtectLeveledSpells::AddForm(RE::TESLeveledList* a_this, RE::TESBoundObject* a_list, unsigned short a_level, unsigned long long a_count, RE::TESForm* a_form) {
-        (void)a_this;
-        (void)a_list;
-        (void)a_level;
-        (void)a_count;
-        (void)a_form;
-    }
-
-    bool ProtectLeveledSpells::Install() {
-        return true;
-    }
-
     bool Install() {
-        return true;
+        constexpr std::size_t allocSize = 14u * 3u;
+        SKSE::AllocTrampoline(allocSize);
+
+        bool success = true;
+        success &= AddFormHook<RE::TESLevItem>::Install(RE::Offset::LevItems_AddForm, 0x56);
+        success &= AddFormHook<RE::TESLevCharacter>::Install(RE::Offset::LevActors_AddForm, 0x56);
+        success &= AddFormHook<RE::TESLevSpell>::Install(RE::Offset::LevSpells_AddForm, 0x56);
+        return success;
     }
 }
