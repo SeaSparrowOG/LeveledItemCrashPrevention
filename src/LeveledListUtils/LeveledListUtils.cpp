@@ -4,7 +4,40 @@
 
 namespace LeveledListUtils
 {
-	static bool IsFormLeveledList(const RE::TESBoundObject* form) {
+	void DebugCache() {
+		SECTION_SEPARATOR;
+		LOG_DEBUG("List of lists and their parents:"sv);
+		for (const auto& [listID, parentIDs] : g_listParents) {
+			const auto* listForm = RE::TESForm::LookupByID<RE::TESBoundObject>(listID);
+			if (!listForm) {
+				LOG_DEBUG("  - Failed to resolve: {:8X}."sv, listID);
+				continue;
+			}
+			const auto* list = skyrim_cast<const RE::TESLeveledList*>(listForm);
+			if (!list) {
+				LOG_DEBUG("  - Not a leveled list: {}"sv, clib_util::editorID::get_editorID(listForm));
+				continue;
+			}
+			LOG_DEBUG("  - {}"sv, clib_util::editorID::get_editorID(listForm));
+
+			for (const auto& parentID : parentIDs) {
+				const auto* parentForm = RE::TESForm::LookupByID<RE::TESBoundObject>(parentID);
+				if (!parentForm) {
+					LOG_DEBUG("    >Failed to resolve: {:8X}."sv, parentID);
+					continue;
+				}
+				const auto* parentList = skyrim_cast<const RE::TESLeveledList*>(parentForm);
+				if (!parentList) {
+					LOG_DEBUG("    >Not a leveled list: {}"sv, clib_util::editorID::get_editorID(parentForm));
+					continue;
+				}
+				LOG_DEBUG("    >{}"sv, clib_util::editorID::get_editorID(parentForm));
+			}
+		}
+		LOG_DEBUG("End."sv);
+	}
+
+	bool IsFormLeveledList(const RE::TESBoundObject* form) {
 		switch (form->GetFormType()) {
 		case RE::FormType::LeveledItem:
 		case RE::FormType::LeveledNPC:
@@ -15,42 +48,38 @@ namespace LeveledListUtils
 		}
 	}
 
-	static void RecordParents(const RE::TESBoundObject* boundList, std::unordered_set<RE::FormID>& parents) {
-
-	}
-
-	void RefreshCache() {
-		auto* dh = RE::TESDataHandler::GetSingleton();
-		if (!dh) {
+	void RecordParents(const RE::TESBoundObject* boundList, std::unordered_set<RE::FormID>& parents) {
+		auto boundID = boundList->GetFormID();
+		auto& currentParents = g_listParents[boundID];
+		auto* asList = boundList->As<RE::TESLeveledList>();
+		if (!asList) {
 			return;
 		}
-		const auto& leveledLists = dh->GetFormArray<RE::TESLeveledList>();
-		if (leveledLists.empty()) {
-			logger::warn("Leveled lists resolved empty within the data handler - potentially catastrophical."sv);
-			return;
+		for (const auto& parent : parents) {
+			currentParents.insert(parent);
 		}
 
-		g_listParents.clear();
-
-		for (const auto* list : leveledLists) {
-			if (!list) {
-				continue;
-			}
-			const auto* boundList = skyrim_cast<const RE::TESBoundObject*>(list);
-			if (!boundList) {
+		parents.insert(boundID);
+		std::unordered_set<RE::FormID> seenInLevel;
+		const auto& entries = asList->entries;
+		for (const auto& entry : entries) {
+			const auto* form = entry.form;
+			const auto* asBound = form ? skyrim_cast<const RE::TESBoundObject*>(form) : nullptr;
+			if (!asBound || !IsFormLeveledList(asBound)) {
 				continue;
 			}
 
-			std::unordered_set<RE::FormID> parents = { boundList->GetFormID() };
-			auto listForms = list->GetContainedForms();
-			for (const auto* containedForm : listForms) {
-				const auto* bound = skyrim_cast<const RE::TESBoundObject*>(containedForm);
-				if (!bound || !IsFormLeveledList(bound)) {
-					continue;
-				}
-				RecordParents(bound, parents);
+			auto subBoundID = asBound->GetFormID();
+			if (seenInLevel.contains(subBoundID)) {
+				continue;
 			}
+
+			seenInLevel.insert(subBoundID);
+			parents.insert(subBoundID);
+			RecordParents(asBound, parents);
+			parents.erase(subBoundID);
 		}
+		parents.erase(boundID);
 	}
 
 	bool FindMalformedLeveledLists() {

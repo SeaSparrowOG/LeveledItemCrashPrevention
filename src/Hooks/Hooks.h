@@ -9,7 +9,7 @@ namespace Hooks {
     template <typename T>
     struct AddFormHook {
 
-        std::string GenerateWarning(T* target, RE::TESBoundObject* toAdd) {
+        static void GenerateWarning(T* target, RE::TESBoundObject* toAdd) {
             static auto tweaks = REX::W32::GetModuleHandleW(L"po3_Tweaks");
             std::string objEdid = "";
             std::string listEdid = "";
@@ -19,14 +19,13 @@ namespace Hooks {
             }
             else {
                 objEdid = fmt::format("{:08X}", toAdd->GetLocalFormID());
-                auto& sourceFiles = leveledList->sourceFiles.array;
+                auto& sourceFiles = target->sourceFiles.array;
                 if (auto end = sourceFiles ? sourceFiles->back() : nullptr; end) {
-                    objEdid = end->GetFilename() + "|" + objEdid;
+                    objEdid = std::string(end->GetFilename()) + "|" + objEdid;
                 }
                 listEdid = fmt::format("{:08X}", target->GetLocalFormID());
-                auto& sourceFiles = leveledList->sourceFiles.array;
                 if (auto end = sourceFiles ? sourceFiles->back() : nullptr; end) {
-                    listEdid = end->GetFilename() + "|" + listEdid;
+                    listEdid = std::string(end->GetFilename()) + "|" + listEdid;
                 }
             }
 
@@ -51,7 +50,7 @@ namespace Hooks {
                 }
             }
             else if (LeveledListUtils::IsAddIllegal(skyrim_cast<RE::TESBoundObject*>(leveledList), toAdd)) {
-                GenerateWarning(leveledList, toAdd)
+                GenerateWarning(leveledList, toAdd);
             }
             else {
                 _addForm(leveledList, toAdd, level, count, a5);

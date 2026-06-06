@@ -1,14 +1,18 @@
 #include "Hooks/Hooks.h"
+#include "LeveledListUtils/LeveledListUtils.h"
 #include "Settings/INI/INISettings.h"
 
 static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 {
-	switch (a_msg->type) {
-	case SKSE::MessagingInterface::kDataLoaded:
-		
-		break;
-	default:
-		break;
+
+	if (a_msg->type == SKSE::MessagingInterface::kDataLoaded) {
+		const auto then = std::chrono::steady_clock::now();
+		LeveledListUtils::RefreshCache<RE::TESLevCharacter>();
+		LeveledListUtils::RefreshCache<RE::TESLevItem>();
+		LeveledListUtils::RefreshCache<RE::TESLevSpell>();
+		const auto elapsed = std::chrono::steady_clock::now() - then;
+		const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+		LOG_DEBUG("Built cache in {}ms"sv, milliseconds);
 	}
 }
 
