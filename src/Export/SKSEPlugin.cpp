@@ -4,15 +4,50 @@
 
 static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 {
+	switch (a_msg->type)
+	{
+	case SKSE::MessagingInterface::kDataLoaded:
+	{
+		logger::info("Searching for pre-existing circular leveled lists..."sv);
+		auto then = std::chrono::steady_clock::now();
+		bool anyCircular = LeveledListUtils::AnyExistingCircularLists<RE::TESLevCharacter>();
+		anyCircular |= LeveledListUtils::AnyExistingCircularLists<RE::TESLevItem>();
+		anyCircular |= LeveledListUtils::AnyExistingCircularLists<RE::TESLevSpell>();
+		auto elapsed = std::chrono::steady_clock::now() - then;
+		auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+		if (anyCircular) {
+			logger::critical("Circular leveled lists detected within the loaded ESP/ESM/ESL files."sv);
+			SKSE::stl::report_and_fail("Found circular leveled lists. These cannot be resolved automatically and must be resolved in xEdit."sv);
+		}
+		logger::info("Finished sanity check in {}ms."sv, milliseconds);
+		SECTION_SEPARATOR;
+	}
+		break;
+	case SKSE::MessagingInterface::kNewGame:
+	case SKSE::MessagingInterface::kPostLoadGame:
+	{
+		logger::info("Updating internal Leveled List cache..."sv);
+		auto then = std::chrono::steady_clock::now();
 
-	if (a_msg->type == SKSE::MessagingInterface::kDataLoaded) {
-		const auto then = std::chrono::steady_clock::now();
+		bool anyCircular = LeveledListUtils::AnyExistingCircularLists<RE::TESLevCharacter>();
+		anyCircular |= LeveledListUtils::AnyExistingCircularLists<RE::TESLevItem>();
+		anyCircular |= LeveledListUtils::AnyExistingCircularLists<RE::TESLevSpell>();
+		if (anyCircular) {
+			logger::warn("Circular leveled lists found within the save. Dynamic guard will not apply. This cannot be fixed."sv);
+			break;
+		}
+
 		LeveledListUtils::RefreshCache<RE::TESLevCharacter>();
 		LeveledListUtils::RefreshCache<RE::TESLevItem>();
 		LeveledListUtils::RefreshCache<RE::TESLevSpell>();
-		const auto elapsed = std::chrono::steady_clock::now() - then;
-		const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
-		LOG_DEBUG("Built cache in {}ms"sv, milliseconds);
+		auto elapsed = std::chrono::steady_clock::now() - then;
+		auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+		logger::info("Finished updating {} entries. Update time: {}ms"sv, LeveledListUtils::g_listParents.size(), milliseconds);
+		SECTION_SEPARATOR;
+		break;
+	}
+	default:
+		break;
 	}
 }
 
