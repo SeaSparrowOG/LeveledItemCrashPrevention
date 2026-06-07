@@ -10,9 +10,7 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 	{
 		logger::info("Searching for pre-existing circular leveled lists..."sv);
 		auto then = std::chrono::steady_clock::now();
-		bool anyCircular = LeveledListUtils::AnyExistingCircularLists<RE::TESLevCharacter>();
-		anyCircular |= LeveledListUtils::AnyExistingCircularLists<RE::TESLevItem>();
-		anyCircular |= LeveledListUtils::AnyExistingCircularLists<RE::TESLevSpell>();
+		bool anyCircular = LeveledListUtils::ListCache::GetSingleton()->Initialize();
 		auto elapsed = std::chrono::steady_clock::now() - then;
 		auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
 		if (anyCircular) {
@@ -29,20 +27,15 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 		logger::info("Updating internal Leveled List cache..."sv);
 		auto then = std::chrono::steady_clock::now();
 
-		bool anyCircular = LeveledListUtils::AnyExistingCircularLists<RE::TESLevCharacter>();
-		anyCircular |= LeveledListUtils::AnyExistingCircularLists<RE::TESLevItem>();
-		anyCircular |= LeveledListUtils::AnyExistingCircularLists<RE::TESLevSpell>();
+		bool anyCircular = false;
 		if (anyCircular) {
 			logger::warn("Circular leveled lists found within the save. Dynamic guard will not apply. This cannot be fixed."sv);
 			break;
 		}
 
-		LeveledListUtils::RefreshCache<RE::TESLevCharacter>();
-		LeveledListUtils::RefreshCache<RE::TESLevItem>();
-		LeveledListUtils::RefreshCache<RE::TESLevSpell>();
 		auto elapsed = std::chrono::steady_clock::now() - then;
 		auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
-		logger::info("Finished updating {} entries. Update time: {}ms"sv, LeveledListUtils::g_listParents.size(), milliseconds);
+		logger::info("Finished updating entries. Update time: {}ms"sv, milliseconds);
 		SECTION_SEPARATOR;
 		break;
 	}

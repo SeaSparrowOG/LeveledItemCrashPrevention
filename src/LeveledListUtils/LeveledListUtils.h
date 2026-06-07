@@ -2,90 +2,65 @@
 
 namespace LeveledListUtils
 {
-	inline std::map<RE::FormID, std::unordered_set<RE::FormID>> g_listParents;
+	bool IsObjectList(const RE::TESBoundObject* form);
+	std::string GetListEDID(RE::FormID id);
 
-	void DebugCache();
-	void DebugCircularLists();
-	bool IsFormLeveledList(const RE::TESBoundObject* form);
-	void RecordParents(const RE::TESBoundObject* boundList, std::unordered_set<RE::FormID>& parents);
-	bool FindMalformedLeveledLists();
-	bool IsAddIllegal(RE::TESBoundObject* target, RE::TESBoundObject* toAdd);
-	std::string GetLeveledListEDID(RE::FormID id);
+	class LeveledListData
+	{
+	public:
+		LeveledListData(const RE::FormID id) : _id{ id } {}
 
-	template <typename T>
-	void RefreshCache() {
-		auto* dh = RE::TESDataHandler::GetSingleton();
-		if (!dh) {
-			return;
+		void               AddParent(const RE::FormID id);
+		void               AddChild(const RE::FormID id);
+		void               RecordHierarchy();
+
+		[[nodiscard]] bool             IsCircular() const;
+		[[nodiscard]] bool             IsInComplete() const;
+		[[nodiscard]] bool             HasParent(const RE::FormID id) const;
+		[[nodiscard]] const RE::FormID GetID() const;
+
+		std::vector<RE::FormID>& GetChildren();
+		const std::vector<RE::FormID>& GetChildren() const;
+
+	private:
+		bool                           _incomplete = false;
+		bool                           _isCircular = false;
+		RE::FormID                     _id;
+		std::vector<RE::FormID>        _children;
+		std::unordered_set<RE::FormID> _parents;
+	};
+
+	class ListCache : public REX::Singleton<ListCache>
+	{
+	public:
+		void                           Reload();
+		[[nodiscard]] bool             Initialize();
+		[[nodiscard]] bool             IsAddLegal(const RE::FormID targetID, const RE::FormID addID);
+		[[nodiscard]] LeveledListData* GetData(const RE::FormID id);
+
+		void RecordListData(const RE::FormID id, LeveledListData& data);
+	private:
+		bool _dynamicGuardOn = true;
+		std::unordered_map<RE::FormID, LeveledListData> _data;
+
+		void ProcessForms();
+	};
+
+	inline bool IsAddIllegal(RE::TESBoundObject* target, RE::TESBoundObject* toAdd) {
+		static auto* cache = ListCache::GetSingleton();
+		if (!cache) {
+			logger::critical("Failed to get internal Leveled List Cache. State potentially corrupted."sv);
+			SKSE::stl::report_and_fail("Failed to get internal Leveled List Cache. State potentially corrupted, aborting game to prevent data corruption."sv);
 		}
-		const auto& forms = dh->GetFormArray<T>();
-		if (forms.empty()) {
-			return;
+		if (!target || !toAdd) {
+			return true;
 		}
-
-		for (const auto* form : forms) {
-			const auto* bound = form ? skyrim_cast<const RE::TESBoundObject*>(form) : nullptr;
-			const auto* list = bound ? skyrim_cast<const RE::TESLeveledList*>(bound) : nullptr;
-			if (!IsFormLeveledList(bound) || !list) {
-				continue;
-			}
-
-			auto boundID = bound->GetFormID();
-			std::unordered_set<RE::FormID> parents = { boundID };
-			std::unordered_set<RE::FormID> seenInLevel;
-
-			const auto& entries = list->entries;
-			if (entries.empty()) {
-				continue;
-			}
-
-			for (const auto& entry : entries) {
-				const auto* containedForm = entry.form;
-				const auto* subBound = containedForm ? skyrim_cast<const RE::TESBoundObject*>(containedForm) : nullptr;
-				if (!subBound || !IsFormLeveledList(subBound)) {
-					continue;
-				}
-				if (seenInLevel.contains(subBound->GetFormID())) {
-					continue;
-				}
-				seenInLevel.insert(subBound->GetFormID());
-				RecordParents(subBound, parents);
-			}
-		}
-	}
-
-	bool ContainsCircularList(const RE::TESBoundObject* obj, 
-		std::unordered_set<RE::FormID>& parents);
-
-	template <typename T>
-	[[nodiscard]] bool AnyExistingCircularLists() {
-		auto* dh = RE::TESDataHandler::GetSingleton();
-		if (!dh) {
-			return false; // TODO: Decide if this is worth aborting over.
-		}
-		const auto& listArray = dh->GetFormArray<T>();
-		if (listArray.empty()) {
-			return false;
+		if (!IsObjectList(target) || !IsObjectList(toAdd)) {
+			return true;
 		}
 
-		for (const auto* list : listArray) {
-			const auto* boundTopList = list ? skyrim_cast<const RE::TESBoundObject*>(list) : nullptr;
-			if (!boundTopList) {
-				continue;
-			}
-			auto topID = boundTopList->GetFormID();
-			std::unordered_set<RE::FormID> parents = { topID };
-
-			const auto& entries = list->entries;
-			for (const auto& entry : entries) {
-				const auto* formSub = entry.form;
-				const auto* boundSub = formSub ? skyrim_cast<const RE::TESBoundObject*>(formSub) : nullptr;
-				if (ContainsCircularList(boundSub, parents)) {
-					logger::critical("  \\_{}"sv, GetLeveledListEDID(boundSub->GetFormID()));
-					return true;
-				}
-			}
-		}
-		return false;
+		const auto targetID = target->GetFormID();
+		const auto toAddID = toAdd->GetFormID();
+		return cache->IsAddLegal(targetID, toAddID);
 	}
 }
