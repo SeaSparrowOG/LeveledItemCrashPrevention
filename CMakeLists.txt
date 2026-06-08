@@ -7,7 +7,7 @@ endif()
 
 # -------- Project ----------
 project(
-	LeveledListCrashFix
+	LeveledListCrashPrevention
 	VERSION 2.0.0
 	LANGUAGES CXX
 )

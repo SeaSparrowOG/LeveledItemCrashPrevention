@@ -1,5 +1,5 @@
 {
-  "name": "leveled-list-crash-fix",
+  "name": "leveled-list-crash-prevention",
   "version-string": "2.0.0",
   "description": "SKSE Plugin for Skyrim Special Edition that fixes some Leveled List related crashes.",
   "homepage": "https://github.com/SeaSparrowOG/LeveledListCrashFix",
