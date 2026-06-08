@@ -8,15 +8,15 @@
 namespace Hooks {
     template <typename T>
     struct AddFormHook {
-        static inline void AddForm(T* leveledList,
-            RE::TESBoundObject* toAdd,
+        static inline void AddForm(RE::TESLeveledList* leveledList,
+            RE::TESBoundObject* listAsBound,
             unsigned short level,
             unsigned long long count,
-            RE::TESForm* a5)
+            RE::TESForm* toAdd)
         {
             constexpr const char* warning = "Leveled List Crash Prevented:"\
                 "\nCheck Documents / My Games / Skyrim Special Edition / SKSE / LeveledListCrashPrevention.log"\
-                "for more information.\nDo not ignore this error.";
+                " for more information.\nDo not ignore this error.";
 
             static bool warn = Settings::INI::GetSetting<bool>(
                 Settings::INI::GENERAL_IN_GAME_WARNINGS.data()
@@ -27,8 +27,7 @@ namespace Hooks {
             ).value_or(false);
 
             if (leveledList->numEntries >= 255) {
-                const auto* bound = skyrim_cast<const RE::TESBoundObject*>(leveledList);
-                const auto targetEDID = bound ? LeveledListUtils::GetListEDID(bound->GetFormID()) : "NULL";
+                const auto targetEDID = LeveledListUtils::GetListEDID(listAsBound->GetFormID());
                 const auto addEDID = LeveledListUtils::GetListEDID(toAdd->GetFormID());
                 logger::warn("Prevent insertion of {} to {} because it would overflow."sv, addEDID, targetEDID);
 
@@ -38,9 +37,9 @@ namespace Hooks {
                 return;
             }
 
-            const auto* bound = skyrim_cast<const RE::TESBoundObject*>(leveledList);
-            if (dynamicGuardOn && bound && LeveledListUtils::IsAddIllegal(bound, toAdd)) {
-                const auto targetEDID = bound ? LeveledListUtils::GetListEDID(bound->GetFormID()) : "NULL";
+            auto* bound = toAdd ? skyrim_cast<RE::TESBoundObject*>(toAdd) : nullptr;
+            if (dynamicGuardOn && bound && LeveledListUtils::IsAddIllegal(listAsBound, bound)) {
+                const auto targetEDID = LeveledListUtils::GetListEDID(listAsBound->GetFormID());
                 const auto addEDID = LeveledListUtils::GetListEDID(toAdd->GetFormID());
                 logger::warn("Prevent insertion of {} to {} because it would create a circular leveled list."sv, addEDID, targetEDID);
 
@@ -50,7 +49,7 @@ namespace Hooks {
                 return;
             }
 
-            _addForm(leveledList, toAdd, level, count, a5);
+            _addForm(leveledList, listAsBound, level, count, toAdd);
         }
 
         static inline REL::Relocation<decltype(&AddForm)> _addForm;
