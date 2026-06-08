@@ -51,9 +51,10 @@ namespace Settings
 		inline static constexpr std::string_view GENERAL_DYNAMIC_SANITIZATION = "General|bDynamicCircularListGuard"sv;
 		inline static constexpr std::string_view GENERAL_IN_GAME_WARNINGS = "General|bWarn"sv;
 
-		inline static constexpr const std::uint8_t EXPECTED_COUNT = 3;
+		inline static constexpr const std::uint8_t EXPECTED_COUNT = 4;
 		inline static constexpr const std::array<std::string_view, EXPECTED_COUNT> EXPECTED_SETTINGS = {
 			GENERAL_STATIC_SANITIZATION,
+			GENERAL_STATIC_CIRCULAR_DETECTION,
 			GENERAL_DYNAMIC_SANITIZATION,
 			GENERAL_IN_GAME_WARNINGS,
 		};
