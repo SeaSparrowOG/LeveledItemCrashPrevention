@@ -6,13 +6,12 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 {
 	switch (a_msg->type)
 	{
+	case SKSE::MessagingInterface::kDataLoaded:
+		logger::info("Finished startup! Enjoy your game!"sv);
+		[[fallthrough]];
 	case SKSE::MessagingInterface::kNewGame:
 	case SKSE::MessagingInterface::kPostLoadGame:
-	case SKSE::MessagingInterface::kDataLoaded:
-	{
-		logger::info("Searching for pre-existing circular leveled lists..."sv);
-		SECTION_SEPARATOR;
-	}
+		LeveledListUtils::AuditLeveledLists();
 		break;
 	default:
 		break;

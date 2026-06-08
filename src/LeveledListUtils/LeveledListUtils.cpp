@@ -90,8 +90,8 @@ namespace LeveledListUtils
 		return false;
 	}
 
-	bool IsAddIllegal(RE::TESBoundObject* target,
-		RE::TESBoundObject* toAdd)
+	bool IsAddIllegal(const RE::TESBoundObject* target,
+		const RE::TESBoundObject* toAdd)
 	{
 		assert(target && toAdd && IsObjectList(target));
 		if (!IsObjectList(toAdd)) {
@@ -105,5 +105,24 @@ namespace LeveledListUtils
 		}
 
 		return CanReachList(addList, parentList);
+	}
+
+	void AuditLeveledLists() {
+		static bool doAudit = Settings::INI::GetSetting<bool>(
+			Settings::INI::GENERAL_STATIC_CIRCULAR_DETECTION.data()
+		).value_or(false);
+
+		if (!doAudit) {
+			return;
+		}
+
+		auto then = std::chrono::steady_clock::now();
+		Audit<RE::TESLevItem>();
+		Audit<RE::TESLevSpell>();
+		Audit<RE::TESLevCharacter>();
+		auto elapsed = std::chrono::steady_clock::now() - then;
+		auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+		logger::info("-----------------------------------------------"sv);
+		logger::info("Finished in {}ms."sv, milliseconds);
 	}
 }

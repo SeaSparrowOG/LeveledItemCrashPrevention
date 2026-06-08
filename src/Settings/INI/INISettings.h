@@ -47,6 +47,7 @@ namespace Settings
 		};
 
 		inline static constexpr std::string_view GENERAL_STATIC_SANITIZATION = "General|bSanitize"sv;
+		inline static constexpr std::string_view GENERAL_STATIC_CIRCULAR_DETECTION = "General|bCheckForExistingCircular"sv;
 		inline static constexpr std::string_view GENERAL_DYNAMIC_SANITIZATION = "General|bDynamicCircularListGuard"sv;
 		inline static constexpr std::string_view GENERAL_IN_GAME_WARNINGS = "General|bWarn"sv;
 
