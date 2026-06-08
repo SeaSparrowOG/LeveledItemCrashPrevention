@@ -33,17 +33,49 @@ namespace LeveledListUtils
 	class ListCache : public REX::Singleton<ListCache>
 	{
 	public:
-		void                           Reload();
-		[[nodiscard]] bool             Initialize();
 		[[nodiscard]] bool             IsAddLegal(const RE::FormID targetID, const RE::FormID addID);
 		[[nodiscard]] LeveledListData* GetData(const RE::FormID id);
 
 		void RecordListData(const RE::FormID id, LeveledListData& data);
+
+		template <typename T>
+		[[nodiscard]] bool             Initialize()
+		{
+			auto* dh = RE::TESDataHandler::GetSingleton();
+			if (!dh) {
+				logger::critical("  - Failed to retrieve the game's Data Handler!"sv);
+				return false;
+			}
+			const auto& leveledItems = dh->GetFormArray<T>();
+			const auto originalSize = _data.size();
+
+			if (leveledItems.empty()) {
+				logger::critical("  - Failed to find any leveled items in the game's files."sv);
+				return false;
+			}
+			for (const auto* ll : leveledItems) {
+				const auto* obj = ll ? ll->As<RE::TESBoundObject>() : nullptr;
+				if (!obj || !IsObjectList(obj) || _data.contains(obj->GetFormID())) {
+					continue;
+				}
+
+				LeveledListData data(obj->GetFormID());
+				data.RecordHierarchy();
+				if (data.IsCircular() || data.IsInComplete()) {
+					continue;
+				}
+
+				_data.emplace(obj->GetFormID(), std::move(data));
+			}
+			logger::info("  - Processed: {} lists, added data for {} of them."sv, leveledItems.size(), _data.size() - originalSize);
+
+			return std::ranges::any_of(_data.begin(), _data.end(), [](const auto& element) {
+				return element.second.IsCircular();
+				});
+		}
 	private:
 		bool _dynamicGuardOn = true;
 		std::unordered_map<RE::FormID, LeveledListData> _data;
-
-		void ProcessForms();
 	};
 
 	inline bool IsAddIllegal(RE::TESBoundObject* target, RE::TESBoundObject* toAdd) {

@@ -37,95 +37,6 @@ namespace LeveledListUtils
 		return listEdid;
 	}
 
-	void ListCache::Reload() {
-		_dynamicGuardOn = false;
-		_data.clear();
-
-	}
-
-	bool ListCache::Initialize() {
-		auto* dh = RE::TESDataHandler::GetSingleton();
-		if (!dh) {
-			logger::critical("  - Failed to retrieve the game's Data Handler!"sv);
-			return false;
-		}
-		const auto& leveledItems = dh->GetFormArray<RE::TESLevItem>();
-		const auto& leveledSpells = dh->GetFormArray<RE::TESLevSpell>();
-		const auto& leveledCharacters = dh->GetFormArray<RE::TESLevCharacter>();
-
-		if (leveledItems.empty()) {
-			logger::critical("  - Failed to find any leveled items in the game's files."sv);
-			return false;
-		}
-		if (leveledSpells.empty()) {
-			logger::critical("  - Failed to find any leveled spells in the game's files."sv);
-			return false;
-		}
-		if (leveledCharacters.empty()) {
-			logger::critical("  - Failed to find any leveled characters in the game's files."sv);
-			return false;
-		}
-
-		for (const auto* ll : leveledItems) {
-			const auto* obj = ll ? ll->As<RE::TESBoundObject>() : nullptr;
-			if (!obj || !IsObjectList(obj) || _data.contains(obj->GetFormID())) {
-				continue;
-			}
-
-			LeveledListData data(obj->GetFormID());
-			data.RecordHierarchy();
-			if (data.IsCircular() || data.IsInComplete()) {
-				continue;
-			}
-
-			_data.emplace(obj->GetFormID(), std::move(data));
-		}
-
-		for (const auto* ll : leveledSpells) {
-			const auto* obj = ll ? ll->As<RE::TESBoundObject>() : nullptr;
-			if (!obj || !IsObjectList(obj) || _data.contains(obj->GetFormID())) {
-				continue;
-			}
-
-			LeveledListData data(obj->GetFormID());
-			data.RecordHierarchy();
-			if (data.IsCircular() || data.IsInComplete()) {
-				continue;
-			}
-
-			_data.emplace(obj->GetFormID(), std::move(data));
-		}
-
-		for (const auto* ll : leveledCharacters) {
-			const auto* obj = ll ? ll->As<RE::TESBoundObject>() : nullptr;
-			if (!obj || !IsObjectList(obj) || _data.contains(obj->GetFormID())) {
-				continue;
-			}
-
-			LeveledListData data(obj->GetFormID());
-			data.RecordHierarchy();
-			if (data.IsCircular() || data.IsInComplete()) {
-				continue;
-			}
-
-			_data.emplace(obj->GetFormID(), std::move(data));
-		}
-		logger::info("  - Finished processing {} objects, found {} leveled lists."sv, 
-			leveledCharacters.size() + leveledSpells.size() + leveledItems.size(), _data.size());
-
-#if 0
-		logger::info("    - Created Entries:"sv);
-		for (const auto& [id, data] : _data) {
-			logger::info("      >{}:"sv, GetListEDID(id));
-			const auto& children = data.GetChildren();
-			for (const auto& child : children) {
-				logger::info("        \\_{}"sv, GetListEDID(child));
-			}
-		}
-#endif
-		return false;
-	}
-
 	bool ListCache::IsAddLegal(const RE::FormID targetID, 
 		const RE::FormID addID)
 	{
@@ -199,7 +110,7 @@ namespace LeveledListUtils
 		if (!listCache) {
 			return;
 		}
-		
+
 		auto* form = RE::TESForm::LookupByID(_id);
 		auto* bound = form ? skyrim_cast<RE::TESBoundObject*>(form) : nullptr;
 		auto* list = bound ? form->As<RE::TESLeveledList>() : nullptr;
@@ -210,7 +121,6 @@ namespace LeveledListUtils
 
 		const auto& entries = list->entries;
 		if (entries.empty()) {
-			LOG_DEBUG("Empty entries exit"sv);
 			return;
 		}
 
@@ -236,12 +146,20 @@ namespace LeveledListUtils
 
 			if (newParents.contains(entryID)) {
 				_isCircular = true;
-				LOG_DEBUG("Extremely early exit"sv);
 				continue;
 			}
 
 			auto* existingData = listCache->GetData(entryID);
+			if (newParents.contains(entryID)) {
+				_isCircular = true;
+				continue;
+			}
+
 			if (existingData) {
+				if (existingData->IsCircular()) {
+					continue;
+				}
+
 				for (const auto& parent : newParents) {
 					existingData->AddParent(parent);
 				}
@@ -252,28 +170,36 @@ namespace LeveledListUtils
 
 				_children.reserve(children.size());
 				for (const auto& resultingChild : children) {
+					if (newParents.contains(resultingChild)) {
+						_isCircular = true;
+						continue;
+					}
 					_children.emplace_back(resultingChild);
 				}
+				_children.emplace_back(entryID);
 				continue;
 			}
 
 			LeveledListData childData(entryID);
 			if (childData.IsInComplete()) {
-				LOG_DEBUG("Incomplete exit"sv);
 				continue;
-			}
-			for (const auto& parent : newParents) {
-				childData.AddParent(parent);
 			}
 			childData.RecordHierarchy();
 			if (childData.IsCircular()) {
-				LOG_DEBUG("Circular exit"sv);
+				_isCircular = true;
 				continue;
 			}
 
+			for (const auto& parent : newParents) {
+				childData.AddParent(parent);
+			}
+
 			const auto& newChildren = childData.GetChildren();
-			for (auto it = newChildren.begin(); !_isCircular && it != newChildren.end(); ++it) {
-				_isCircular = newParents.contains(*it);
+			for (auto it = newChildren.begin(); it != newChildren.end(); ++it) {
+				if (newParents.contains(*it)) {
+					_isCircular = true;
+					continue;
+				}
 				children.insert(*it);
 			}
 			children.insert(entryID);
@@ -291,5 +217,16 @@ namespace LeveledListUtils
 	bool LeveledListData::IsCircular() const { return _isCircular; }
 	bool LeveledListData::IsInComplete() const { return _incomplete; }
 	bool LeveledListData::HasParent(const RE::FormID id) const { return _parents.contains(id); }
-	void LeveledListData::AddParent(const RE::FormID id) { _parents.insert(id); }
+
+	void LeveledListData::AddParent(const RE::FormID id) {
+		auto* cache = ListCache::GetSingleton();
+		_parents.insert(id);
+		for (const auto& childID : _children) {
+			auto* child = cache->GetData(childID);
+			if (!child || child->IsCircular()) {
+				continue;
+			}
+			child->AddParent(id);
+		}
+	}
 }

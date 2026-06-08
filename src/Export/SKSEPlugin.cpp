@@ -10,7 +10,9 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 	{
 		logger::info("Searching for pre-existing circular leveled lists..."sv);
 		auto then = std::chrono::steady_clock::now();
-		bool anyCircular = LeveledListUtils::ListCache::GetSingleton()->Initialize();
+		bool anyCircular = LeveledListUtils::ListCache::GetSingleton()->Initialize<RE::TESLevItem>();
+		anyCircular |= LeveledListUtils::ListCache::GetSingleton()->Initialize<RE::TESLevSpell>();
+		anyCircular |= LeveledListUtils::ListCache::GetSingleton()->Initialize<RE::TESLevCharacter>();
 		auto elapsed = std::chrono::steady_clock::now() - then;
 		auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
 		if (anyCircular) {
