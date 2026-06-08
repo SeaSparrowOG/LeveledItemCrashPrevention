@@ -6,41 +6,14 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 {
 	switch (a_msg->type)
 	{
+	case SKSE::MessagingInterface::kNewGame:
+	case SKSE::MessagingInterface::kPostLoadGame:
 	case SKSE::MessagingInterface::kDataLoaded:
 	{
 		logger::info("Searching for pre-existing circular leveled lists..."sv);
-		auto then = std::chrono::steady_clock::now();
-		bool anyCircular = LeveledListUtils::ListCache::GetSingleton()->Initialize<RE::TESLevItem>();
-		anyCircular |= LeveledListUtils::ListCache::GetSingleton()->Initialize<RE::TESLevSpell>();
-		anyCircular |= LeveledListUtils::ListCache::GetSingleton()->Initialize<RE::TESLevCharacter>();
-		auto elapsed = std::chrono::steady_clock::now() - then;
-		auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
-		if (anyCircular) {
-			logger::critical("Circular leveled lists detected within the loaded ESP/ESM/ESL files."sv);
-			SKSE::stl::report_and_fail("Found circular leveled lists. These cannot be resolved automatically and must be resolved in xEdit."sv);
-		}
-		logger::info("Finished sanity check in {}ms."sv, milliseconds);
 		SECTION_SEPARATOR;
 	}
 		break;
-	case SKSE::MessagingInterface::kNewGame:
-	case SKSE::MessagingInterface::kPostLoadGame:
-	{
-		logger::info("Updating internal Leveled List cache..."sv);
-		auto then = std::chrono::steady_clock::now();
-
-		bool anyCircular = false;
-		if (anyCircular) {
-			logger::warn("Circular leveled lists found within the save. Dynamic guard will not apply. This cannot be fixed."sv);
-			break;
-		}
-
-		auto elapsed = std::chrono::steady_clock::now() - then;
-		auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
-		logger::info("Finished updating entries. Update time: {}ms"sv, milliseconds);
-		SECTION_SEPARATOR;
-		break;
-	}
 	default:
 		break;
 	}
