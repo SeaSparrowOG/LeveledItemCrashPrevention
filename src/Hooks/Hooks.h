@@ -29,7 +29,7 @@ namespace Hooks {
             if (leveledList->numEntries >= 255) {
                 const auto targetEDID = LeveledListUtils::GetListEDID(listAsBound->GetFormID());
                 const auto addEDID = LeveledListUtils::GetListEDID(toAdd->GetFormID());
-                logger::warn("Prevent insertion of {} to {} because it would overflow."sv, addEDID, targetEDID);
+                logger::WARN("Prevent insertion of {} to {} because it would overflow."sv, addEDID, targetEDID);
 
                 if (warn) {
                     RE::DebugMessageBox(warning);
@@ -41,7 +41,7 @@ namespace Hooks {
             if (dynamicGuardOn && bound && LeveledListUtils::IsAddIllegal(listAsBound, bound)) {
                 const auto targetEDID = LeveledListUtils::GetListEDID(listAsBound->GetFormID());
                 const auto addEDID = LeveledListUtils::GetListEDID(toAdd->GetFormID());
-                logger::warn("Prevent insertion of {} to {} because it would create a circular leveled list."sv, addEDID, targetEDID);
+                logger::WARN("Prevent insertion of {} to {} because it would create a circular leveled list."sv, addEDID, targetEDID);
 
                 if (warn) {
                     RE::DebugMessageBox(warning);
@@ -57,12 +57,12 @@ namespace Hooks {
         static inline bool Install(REL::ID id, std::ptrdiff_t offset)
         {
             REL::Relocation<std::uintptr_t> target{ id, offset };
-            if (!(REL::make_pattern<"E8">().match(target.address()))) {
-                logger::critical("    > Failed to match pattern at {}."sv, id.id());
+            if (!(REL::Pattern<"E8">().match(target.address()))) {
+                logger::CRITICAL("    > Failed to match pattern at {}."sv, id.id());
                 return false;
             }
 
-            auto& trampoline = SKSE::GetTrampoline();
+            auto& trampoline = REL::GetTrampoline();
             _addForm = trampoline.write_call<5>(target.address(), &AddForm);
             return true;
         }
