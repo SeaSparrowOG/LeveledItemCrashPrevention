@@ -19,15 +19,15 @@ namespace LeveledListUtils
 		).value_or(false);
 
 		SECTION_SEPARATOR;
-		logger::info("Auditing: {}"sv, RE::FormTypeToString(T::FORMTYPE));
+		logger::INFO("Auditing: {}"sv, RE::FormTypeToString(T::FORMTYPE));
 		auto* dh = RE::TESDataHandler::GetSingleton();
 		if (!dh) {
-			logger::error("  - Failed to fetch the game's internal data handler. You likely will crash later."sv);
+			logger::ERROR("  - Failed to fetch the game's internal data handler. You likely will crash later."sv);
 			return;
 		}
 		auto& lists = dh->GetFormArray<T>();
 		if (lists.empty()) {
-			logger::error("  - Lists resolved as empty. This is definitely not intentional."sv);
+			logger::ERROR("  - Lists resolved as empty. This is definitely not intentional."sv);
 			return;
 		}
 
@@ -56,18 +56,18 @@ namespace LeveledListUtils
 			}
 		}
 		if (circularLists.empty()) {
-			logger::info("  - No circular lists found."sv);
+			logger::INFO("  - No circular lists found."sv);
 			return;
 		}
 
-		logger::error("  - {} circular leveled lists found."sv, circularLists.size());
+		logger::ERROR("  - {} circular leveled lists found."sv, circularLists.size());
 		for (const auto* list : circularLists) {
 			const auto* bound = skyrim_cast<const RE::TESBoundObject*>(list);
 			if (!bound) {
 				continue;
 			}
 			const auto listEDID = GetListEDID(bound->GetFormID());
-			logger::error("      > {}"sv, listEDID);
+			logger::ERROR("      > {}"sv, listEDID);
 		}
 	}
 }

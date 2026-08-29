@@ -1,17 +1,18 @@
 {
   "name": "leveled-list-crash-prevention",
-  "version-string": "2.0.0",
+  "version-string": "2.0.1",
   "description": "SKSE Plugin for Skyrim Special Edition that fixes some Leveled List related crashes.",
   "homepage": "https://github.com/SeaSparrowOG/LeveledListCrashFix",
-  "license": "GPL-3.0",
-  "dependencies": [
+  "license": "GPL-3.0-or-later",
+    "dependencies": [
     "boost-stl-interfaces",
     "clib-util",
+    "commonlib-shared",
     "fmt",
     "rsm-binary-io",
     "spdlog",
     "simpleini",
     "xbyak"
   ],
-  "builtin-baseline": "eae1680538b86f962455c27abca2aad0dc304a4d"
+  "builtin-baseline": "00c5775211f45cd08b37fce0484b4cb940e422ab"
 }

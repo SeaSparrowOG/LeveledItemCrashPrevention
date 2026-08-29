@@ -7,7 +7,7 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 	switch (a_msg->type)
 	{
 	case SKSE::MessagingInterface::kDataLoaded:
-		logger::info("Finished startup! Enjoy your game!"sv);
+		logger::INFO("Finished startup! Enjoy your game!"sv);
 		[[fallthrough]];
 	case SKSE::MessagingInterface::kNewGame:
 	case SKSE::MessagingInterface::kPostLoadGame:
@@ -33,14 +33,14 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []()
 	}();
 #endif
 
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
+SKSE_PLUGIN_QUERY(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
 {
 	a_info->infoVersion = SKSE::PluginInfo::kVersion;
 	a_info->name = Plugin::NAME.data();
 	a_info->version = Plugin::VERSION[0];
 
 	if (a_skse->IsEditor()) {
-		logger::critical("Loaded in editor, marking as incompatible"sv);
+		logger::CRITICAL("Loaded in editor, marking as incompatible"sv);
 		return false;
 	}
 
@@ -50,17 +50,27 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a
 #else
 	if (ver < SKSE::RUNTIME_1_5_39) {
 #endif
-		logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
+		logger::CRITICAL(FMT_STRING("Unsupported runtime version {}"), ver.string());
 		return false;
 	}
 
 	return true;
 	}
 
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_skse)
+SKSE_PLUGIN_LOAD(const SKSE::LoadInterface * a_skse)
 {
-	SKSE::Init(a_skse);
-	logger::info("Author: SeaSparrow"sv);
+	constexpr std::size_t allocSize = 14u * 3u;
+
+	SKSE::InitInfo info;
+	info.hook = true;
+	info.log = true;
+	info.logLevel = REX::ELogLevel::Trace;
+	info.logName = Plugin::NAME.data();
+	info.trampoline = true;
+	info.trampolineSize = allocSize;
+
+	SKSE::Init(a_skse, info);
+	logger::INFO("Author: SeaSparrow"sv);
 	SECTION_SEPARATOR;
 
 #ifdef SKYRIM_AE
@@ -70,14 +80,14 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_
 	}
 #endif
 
-	logger::info("Performing startup tasks..."sv);
+	logger::INFO("Performing startup tasks..."sv);
 
 	if (!Settings::INI::Read()) {
-		SKSE::stl::report_and_fail("Failed to load INI settings. Check the log (Documents/My Games/Skyrim Special Edition/ContainerDistributionFramework.log) for more information."sv);
+		REX::FAIL("Failed to load INI settings. Check the log (Documents/My Games/Skyrim Special Edition/ContainerDistributionFramework.log) for more information."sv);
 	}
 	SECTION_SEPARATOR;
 	if (!Hooks::Install()) {
-		SKSE::stl::report_and_fail("Failed to install hooks. Check the log (Documents/My Games/Skyrim Special Edition/ContainerDistributionFramework.log) for more information."sv);
+		REX::FAIL("Failed to install hooks. Check the log (Documents/My Games/Skyrim Special Edition/ContainerDistributionFramework.log) for more information."sv);
 	}
 	SECTION_SEPARATOR;
 

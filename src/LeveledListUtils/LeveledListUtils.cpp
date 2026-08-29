@@ -2,6 +2,8 @@
 
 #include "Settings/INI/INISettings.h"
 
+#include <ClibUtil/editorID.hpp>
+
 namespace LeveledListUtils
 {
 	bool IsObjectList(const RE::TESBoundObject* form) {
@@ -122,7 +124,7 @@ namespace LeveledListUtils
 		Audit<RE::TESLevCharacter>();
 		auto elapsed = std::chrono::steady_clock::now() - then;
 		auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
-		logger::info("-----------------------------------------------"sv);
-		logger::info("Finished in {}ms."sv, milliseconds);
+		logger::INFO("-----------------------------------------------"sv);
+		logger::INFO("Finished in {}ms."sv, milliseconds);
 	}
 }
